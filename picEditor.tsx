@@ -74,17 +74,31 @@ export default class PicEditor extends React.Component<PicEditorProps, any> {
     document.addEventListener("mousemove", this.onRotating);
     document.addEventListener("mouseup", this.onRotateEnd);
   };
+  realRotate = 0;
   onRotating = (event: MouseEvent) => {
     const { clientX, clientY } = event;
     const centerX = this.state.anchorX * this.state.width;
     const centerY = this.state.anchorY * this.state.height;
-    const lastDeg = Math.atan2(
-      this._lastMousePos.y - centerY,
-      this._lastMousePos.x - centerX
-    );
+
+    const disX = this._lastMousePos.x - centerX;
+    const disY = this._lastMousePos.y - centerY;
+
+    const deltaX = this._lastMousePos.x - clientX;
+    const deltaY = this._lastMousePos.y - clientY;
+
+    const deltaPos = Math.hypot(deltaY, deltaX);
+    const lastDeg = Math.atan2(disY, disX);
     const newDeg = Math.atan2(clientY - centerY, clientX - centerX);
     const deltaDeg = newDeg - lastDeg;
-    const result = this.state.rotate + (deltaDeg * 180) / Math.PI;
+    let result = (this.realRotate + (deltaDeg * 180) / Math.PI + 360) % 360;
+    this.realRotate = result;
+    if (deltaPos < 3)
+      for (let i = 0; i < 360; i += 45) {
+        if (Math.abs(result - i) < 5) {
+          result = i;
+          break;
+        }
+      }
     this.setState({ rotate: result });
     this._lastMousePos = { x: clientX, y: clientY };
   };
@@ -191,12 +205,7 @@ export default class PicEditor extends React.Component<PicEditorProps, any> {
                 p-id="3391"
                 width="50"
                 height="50"
-                style={{
-                  position: "absolute",
-                  left: 0,
-                  top: 0,
-                  transform: "translate(-26.5px,-50%)"
-                }}
+                className="rotate-bar"
                 onMouseEnter={() => {
                   document.getElementById("rotateBar").style.fill = "#40a9ff";
                 }}
@@ -344,6 +353,17 @@ export default class PicEditor extends React.Component<PicEditorProps, any> {
       .control-border{
         position:absolute;
         border:1px solid #36cfc9;
+      }
+      .rotate-bar{
+        position: absolute;
+        left: 0;
+        top: 0;
+        transform: translate(-25.5px,-25px);
+        transform-origin: 25.4px 25.4px;
+        transition: all 0.5s ease;
+      }
+      .rotate-bar:hover{
+        transform:  translate(-25.5px,-25px) rotate(-90deg);
       }
     `;
     document.head.appendChild(classTag);
