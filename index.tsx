@@ -2,8 +2,7 @@ import React, { Component } from "react";
 import { render } from "react-dom";
 import PicEditor from "./picEditor";
 import "./style.css";
-import img from './img.png'
-
+import { src } from "./img";
 class App extends Component<any, any> {
   constructor(props) {
     super(props);
@@ -12,7 +11,7 @@ class App extends Component<any, any> {
   render() {
     return (
       <div>
-        <PicEditor src={img}/>
+        <PicEditor src={src}/>
       </div>
     );
   }
