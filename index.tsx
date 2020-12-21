@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import { render } from "react-dom";
 import PicEditor from "./picEditor";
 import "./style.css";
+import img from './img.png'
 
 class App extends Component<any, any> {
   constructor(props) {
@@ -11,7 +12,7 @@ class App extends Component<any, any> {
   render() {
     return (
       <div>
-        <PicEditor />
+        <PicEditor src={img}/>
       </div>
     );
   }
