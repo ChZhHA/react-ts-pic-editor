@@ -37,7 +37,8 @@ export default class PicEditor extends React.Component<PicEditorProps, any> {
             position: "absolute",
             left: sx,
             top: sy,
-            transform: `rotate(${rotate}deg)`
+            transform: `rotate(${rotate}deg) translate(-50%,-50%)`,
+            transformOrigin: "left top"
           }}
         />
         <div
@@ -47,9 +48,9 @@ export default class PicEditor extends React.Component<PicEditorProps, any> {
           {this.viewControlBorder()}
           {this.viewControlPoints()}
         </div>
-        <button onClick={this.makeFile} style={{ position: "absolute" }}>
-          生成图片
-        </button>
+        <div style={{ position: "absolute" }}>
+          <button onClick={this.makeFile}>生成图片</button>
+        </div>
       </div>
     );
   }
@@ -90,6 +91,7 @@ export default class PicEditor extends React.Component<PicEditorProps, any> {
   onRotateEnd = () => {
     document.removeEventListener("mousemove", this.onRotating);
     document.removeEventListener("mouseup", this.onRotateEnd);
+    this.fitView();
   };
   onDragStart = (event: ME) => {
     const { clientX, clientY, target } = event;
@@ -248,14 +250,54 @@ export default class PicEditor extends React.Component<PicEditorProps, any> {
       width,
       height
     };
-    this.setState({ width, height });
+    this.setState({ width, height, sx: width / 2, sy: height / 2 });
+  };
+  fitView = () => {
+    let { width, height, sx, sy, rotate } = this.state;
+    const { width: oWidth, height: oHeight } = this.originSize;
+    const points = [
+      { x: sx, y: sy },
+      { x: sx + oWidth, y: sy },
+      { x: sx, y: sy + oHeight },
+      { x: sx + oWidth, y: sy + oHeight }
+    ];
+    const cx = width / 2,
+      cy = height / 2;
+    const deltaAng = (rotate / 180) * Math.PI;
+    const bbox = {
+      left: Infinity,
+      right: -Infinity,
+      top: Infinity,
+      bottom: -Infinity
+    };
+    for (let i = 0; i < 4; i++) {
+      let { x, y } = points[i];
+      const dis = Math.hypot(y - cy, x - cx);
+      const ang = Math.atan2(y - cy, x - cx);
+      const newX = Math.floor(Math.cos(ang + deltaAng) * dis + cx);
+      const newY = Math.floor(Math.sin(ang + deltaAng) * dis + cy);
+      points[i] = { x: newX, y: newY };
+      bbox.left = Math.min(bbox.left, newX);
+      bbox.top = Math.min(bbox.top, newY);
+      bbox.right = Math.max(bbox.right, newX);
+      bbox.bottom = Math.max(bbox.bottom, newY);
+    }
+    width = bbox.right - bbox.left;
+    height = bbox.bottom - bbox.top;
+    this.setState({
+      width,
+      height,
+      sx: width / 2,
+      sy: height / 2
+    });
+    // console.log(bbox, sx, sy, points);
   };
   makeFile = () => {
     const { width, height, sx, sy, anchorX, anchorY, rotate } = this.state;
     this._canvas.width = width;
     this._canvas.height = height;
     const { width: oWidth, height: oHeight } = this.originSize;
-    this._ctx.translate(sx + oWidth / 2, sy + oHeight / 2);
+    this._ctx.translate(sx, sy);
     this._ctx.rotate((rotate / 180) * Math.PI);
     this._ctx.drawImage(
       document.getElementById("picEditorTarget") as HTMLImageElement,
